@@ -7,7 +7,7 @@ on:
     branches: [ "main", "dev" ]
 
 jobs:
-  build-and-deploy:
+  build-and-deploy: # 
     runs-on: ubuntu-latest
 
     steps:
@@ -28,7 +28,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: tronghghe172557/quizrise-be:latest
+          tags: giatrong/quizrise-be
 
       # # 4. Deploy trên Linux server qua SSH
       # - name: Deploy to Linux server

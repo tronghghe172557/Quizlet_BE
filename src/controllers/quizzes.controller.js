@@ -3,6 +3,7 @@ import Quiz from '../models/quiz.model.js';
 import { generateQuizFromText } from '../services/gemini.service.js';
 
 const CreateQuizSchema = z.object({
+  title: z.string().min(1, 'title không được để trống'),
   text: z.string().min(10, 'text quá ngắn, tối thiểu 10 ký tự'),
   model: z.string().optional(),
   createdBy: z.string().email().optional(),
@@ -10,9 +11,10 @@ const CreateQuizSchema = z.object({
 
 export async function createQuiz(req, res, next) {
   try {
-    const { text, model, createdBy } = CreateQuizSchema.parse(req.body);
+    const { title, text, model, createdBy } = CreateQuizSchema.parse(req.body);
     const generated = await generateQuizFromText(text, model);
     const doc = await Quiz.create({
+      title,
       sourceText: text,
       model: generated.model,
       questions: generated.questions,

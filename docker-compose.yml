@@ -10,7 +10,7 @@ services:
     env_file:
       - .env  
     ports:
-      - "3000:3000" # chỉ expose app ra ngoài
+      - "3000:3000" 
     networks:
       - quizrise-net
 
@@ -19,7 +19,7 @@ services:
     container_name: quizrise-mongo
     restart: unless-stopped
     ports:
-      - "27017:27017" # expose MongoDB port ra ngoài
+      - "27017:27017"
     volumes:
       - mongo-data:/data/db
     networks:

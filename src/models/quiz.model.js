@@ -19,6 +19,7 @@ const QuestionSchema = new mongoose.Schema(
 
 const QuizSchema = new mongoose.Schema(
   {
+    title: { type: String, required: true },
     sourceText: { type: String, required: true },
     model: { type: String, default: 'gemini-1.5-flash' },
     questions: { type: [QuestionSchema], required: true },

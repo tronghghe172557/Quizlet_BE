@@ -14,7 +14,7 @@ if (apiKeys.length === 0) {
   console.warn('No GEMINI_API_KEY found. Quiz generation will fail until configured.');
 }
 
-const DEFAULT_MODEL = 'gemini-1.5-flash';
+const DEFAULT_MODEL = 'gemini-2.0-flash';
 const RETRY_DELAY = 2000; // 2 seconds
 const MAX_RETRIES = 3;
 
@@ -23,7 +23,7 @@ function buildPromptFromText(sourceText) {
 Given the following source text, produce a multiple-choice quiz in STRICT JSON format.  
 
 Rules:
-- Always generate exactly 5 questions.  
+- Always generate exactly questions ( follow the value Source Text: There are many new words, then create a question for me).  
 - Focus on vocabulary, synonyms, and meaning in context from the source text.  
 - Each question must test understanding at ${skillLevel} English level.  
 - Each question must have exactly 4 choices, only one is correct.  

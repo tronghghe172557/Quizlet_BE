@@ -31,13 +31,13 @@ jobs:
           tags: giatrong/quizrise-be
 
       # # 4. Deploy trên Linux server qua SSH
-      # - name: Deploy to Linux server
-      #   uses: appleboy/ssh-action@v1.0.3
-      #   with:
-      #     host: ${{ secrets.SERVER_HOST }}
-      #     username: ${{ secrets.SERVER_USER }}
-      #     key: ${{ secrets.SERVER_SSH_KEY }}
-      #     script: |
-      #       cd ~/quizrise-be
-      #       docker compose pull
-      #       docker compose up -d --remove-orphans
+      - name: Deploy to Linux server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd ~/quizrise-be
+            docker compose -f docker-compose.yml --env-file .env pull
+            docker compose -f docker-compose.yml --env-file .env up -d

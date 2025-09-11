@@ -38,6 +38,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cd ~/quizrise
+            cd ~/quiz
             docker compose -f docker-compose.yml --env-file .env pull
             docker compose -f docker-compose.yml --env-file .env up -d

@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    image: giatrong/quizrise-be   # lấy image từ Docker Hub -> ko cần build lại lần nữa
     container_name: quizrise-be
     restart: unless-stopped
     depends_on:

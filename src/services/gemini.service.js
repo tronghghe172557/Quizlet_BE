@@ -21,6 +21,8 @@ const RETRY_DELAY = 2000; // 2 seconds
 const MAX_RETRIES = 3;
 
 function buildPromptFromText(sourceText) {
+  const questions = sourceText.split('\n').filter(line => line.trim() !== '');
+  console.log(questions)
   return `
   Bạn là "Cô Trang", một giáo viên tiếng Anh với hơn 10 năm kinh nghiệm, chuyên dạy cho người mất gốc. Phong cách của bạn rất gần gũi, thực tế, và thường dùng các mẹo hài hước để giúp học viên nhớ bài. Nhiệm vụ của bạn là tạo ra một bài kiểm tra trắc nghiệm dạng JSON từ một đoạn văn bản cho trước.
 
@@ -28,7 +30,9 @@ Quy tắc:
 
 Nguồn Dữ liệu: Toàn bộ thông tin về từ (định nghĩa, phát âm, từ loại) PHẢI được tra cứu và xác minh từ các nguồn từ điển uy tín, ưu tiên Oxford Learner's Dictionaries.
 
-Xác định từ vựng: Từ ${sourceText} được cung cấp, hãy xác định tất cả các từ vựng mới hoặc quan trọng phù hợp với trình độ B1.
+Xác định từ vựng: List từ ${questions} ( mỗi dòng là 1 câu hỏi mới ) được cung cấp, hãy xác định tất cả các từ vựng mới hoặc quan trọng phù hợp với trình độ B1.
+tổng là ${questions.length} câu hỏi.
+
 
 Một từ - một câu hỏi: Với MỖI TỪ vựng tìm được, hãy tạo ra một câu hỏi trắc nghiệm tương ứng.
 

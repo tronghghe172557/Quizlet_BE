@@ -6,6 +6,7 @@ import compression from 'compression';
 import './config/mongoose.js';
 import quizzesRouter from './routes/quizzes.routes.js';
 import skillsRouter from './routes/skills.routes.js';
+import submissionsRouter from './routes/submissions.routes.js';
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.get('/health', (req, res) => {
 // init routes
 app.use('/api/quizzes', quizzesRouter);
 app.use('/api/skills', skillsRouter);
+app.use('/api/submissions', submissionsRouter);
 
 // func middleware
 app.use((req, res, next) => {

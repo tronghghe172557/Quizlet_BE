@@ -1,0 +1,87 @@
+{
+  "info": {
+    "_postman_id": "submissions-api-doc-quizrise",
+    "name": "Quizrise Submissions API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "API documentation for Quizrise submissions endpoints."
+  },
+  "item": [
+    {
+      "name": "Submit Quiz",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quizId\": \"<quizId>\",\n  \"userEmail\": \"user@example.com\",\n  \"answers\": [\n    { \"questionIndex\": 0, \"selectedChoiceIndex\": 1 },\n    { \"questionIndex\": 1, \"selectedChoiceIndex\": 2 }\n  ],\n  \"timeSpent\": 120\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/submissions",
+          "host": ["{{base_url}}"],
+          "path": ["api", "submissions"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get User Submissions",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/submissions?userEmail=user@example.com",
+          "host": ["{{base_url}}"],
+          "path": ["api", "submissions"],
+          "query": [
+            { "key": "userEmail", "value": "user@example.com" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Submission By ID",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/submissions/:id",
+          "host": ["{{base_url}}"],
+          "path": ["api", "submissions", ":id"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Quiz Submissions",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/submissions/quiz/:quizId",
+          "host": ["{{base_url}}"],
+          "path": ["api", "submissions", "quiz", ":quizId"],
+          "query": [
+            { "key": "userEmail", "value": "" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Quiz Stats",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/submissions/quiz/:quizId/stats",
+          "host": ["{{base_url}}"],
+          "path": ["api", "submissions", "quiz", ":quizId", "stats"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

@@ -35,6 +35,37 @@ const UserSchema = new mongoose.Schema(
     refreshToken: {
       type: String,
       select: false
+    },
+    // Thống kê học tập
+    vocabularyStreak: {
+      type: Number,
+      default: 0
+    },
+    lastVocabularyDate: {
+      type: Date
+    },
+    totalQuizzesCompleted: {
+      type: Number,
+      default: 0
+    },
+    averageScore: {
+      type: Number,
+      default: 0
+    },
+    learningPreferences: {
+      dailyWordGoal: {
+        type: Number,
+        default: 10
+      },
+      reminderTime: {
+        type: String,
+        default: '09:00' // Format: HH:MM
+      },
+      difficultyLevel: {
+        type: String,
+        enum: ['beginner', 'intermediate', 'advanced'],
+        default: 'intermediate'
+      }
     }
   },
   { 

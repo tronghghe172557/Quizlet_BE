@@ -1,0 +1,772 @@
+{
+  "info": {
+    "_postman_id": "12345678-1234-1234-1234-123456789012",
+    "name": "Review Schedule & Daily Vocabulary API",
+    "description": "API endpoints for review scheduling and daily vocabulary learning",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Review Schedule",
+      "item": [
+        {
+          "name": "Create Review Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quizId\": \"67643aa4e123456789abcdef\",\n  \"reviewInterval\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/review-schedule",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "review-schedule"
+              ]
+            },
+            "description": "Tạo lịch ôn tập cho quiz. reviewInterval có thể là 1, 3, 5, 7, 15, 30 (ngày)"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"quizId\": \"67643aa4e123456789abcdef\",\n  \"reviewInterval\": 3\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/review-schedule",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "review-schedule"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Tạo lịch ôn tập thành công\",\n  \"metadata\": {\n    \"_id\": \"67643cc4e123456789abcdef\",\n    \"user\": \"67643bb4e123456789abcdef\",\n    \"quiz\": {\n      \"_id\": \"67643aa4e123456789abcdef\",\n      \"title\": \"English Vocabulary - Chapter 1\",\n      \"questions\": 10\n    },\n    \"lastReviewedAt\": \"2025-09-14T10:00:00.000Z\",\n    \"nextReviewAt\": \"2025-09-17T10:00:00.000Z\",\n    \"reviewInterval\": 3,\n    \"reviewCount\": 0,\n    \"difficultyLevel\": \"medium\",\n    \"isActive\": true,\n    \"averageScore\": 0,\n    \"lastScore\": 0,\n    \"createdAt\": \"2025-09-14T10:00:00.000Z\",\n    \"updatedAt\": \"2025-09-14T10:00:00.000Z\",\n    \"needsReview\": false\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Quizzes Due for Review",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/review-schedule/due?limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "review-schedule",
+                "due"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lấy danh sách quiz cần ôn tập hôm nay"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/review-schedule/due?limit=10",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "review-schedule",
+                    "due"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Lấy danh sách quiz cần ôn tập thành công\",\n  \"metadata\": {\n    \"quizzes\": [\n      {\n        \"_id\": \"67643cc4e123456789abcdef\",\n        \"user\": \"67643bb4e123456789abcdef\",\n        \"quiz\": {\n          \"_id\": \"67643aa4e123456789abcdef\",\n          \"title\": \"English Vocabulary - Chapter 1\",\n          \"questions\": 10,\n          \"createdAt\": \"2025-09-10T10:00:00.000Z\"\n        },\n        \"nextReviewAt\": \"2025-09-14T09:00:00.000Z\",\n        \"reviewInterval\": 3,\n        \"reviewCount\": 2,\n        \"averageScore\": 75,\n        \"lastScore\": 80,\n        \"needsReview\": true\n      }\n    ],\n    \"total\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get My Review Schedules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/review-schedule/my?page=1&limit=10&active=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "review-schedule",
+                "my"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "active",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Lấy tất cả lịch ôn tập của user với phân trang"
+          }
+        },
+        {
+          "name": "Update Review After Submission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"submissionId\": \"67643bb4e123456789abcdef\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/review-schedule/{{schedule_id}}/complete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "review-schedule",
+                "{{schedule_id}}",
+                "complete"
+              ]
+            },
+            "description": "Cập nhật lịch ôn tập sau khi hoàn thành quiz (tự động điều chỉnh interval dựa trên điểm)"
+          }
+        },
+        {
+          "name": "Update Review Schedule Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewInterval\": 7,\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/review-schedule/{{schedule_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "review-schedule",
+                "{{schedule_id}}"
+              ]
+            },
+            "description": "Cập nhật cài đặt lịch ôn tập"
+          }
+        },
+        {
+          "name": "Delete Review Schedule",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/review-schedule/{{schedule_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "review-schedule",
+                "{{schedule_id}}"
+              ]
+            },
+            "description": "Xóa lịch ôn tập"
+          }
+        },
+        {
+          "name": "Get Review Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/review-schedule/statistics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "review-schedule",
+                "statistics"
+              ]
+            },
+            "description": "Lấy thống kê ôn tập (tổng số lịch, số cần ôn, điểm trung bình, v.v.)"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/review-schedule/statistics",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "review-schedule",
+                    "statistics"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Lấy thống kê ôn tập thành công\",\n  \"metadata\": {\n    \"statistics\": {\n      \"totalSchedules\": 25,\n      \"activeSchedules\": 20,\n      \"needsReview\": 3,\n      \"averageScore\": 78.5,\n      \"totalReviews\": 145\n    },\n    \"recentPerformance\": [\n      {\n        \"_id\": \"67643cc4e123456789abcdef\",\n        \"lastScore\": 85,\n        \"lastReviewedAt\": \"2025-09-14T09:30:00.000Z\",\n        \"quiz\": {\n          \"_id\": \"67643aa4e123456789abcdef\",\n          \"title\": \"English Vocabulary - Chapter 1\"\n        }\n      },\n      {\n        \"_id\": \"67643cc5e123456789abcdef\",\n        \"lastScore\": 72,\n        \"lastReviewedAt\": \"2025-09-13T14:15:00.000Z\",\n        \"quiz\": {\n          \"_id\": \"67643aa5e123456789abcdef\",\n          \"title\": \"Grammar Basics - Tenses\"\n        }\n      }\n    ]\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Daily Vocabulary",
+      "item": [
+        {
+          "name": "Get Today Vocabulary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vocabulary/today",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vocabulary",
+                "today"
+              ]
+            },
+            "description": "Lấy từ vựng hôm nay (tự động tạo nếu chưa có)"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/vocabulary/today",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vocabulary",
+                    "today"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Lấy từ vựng hôm nay thành công\",\n  \"metadata\": {\n    \"_id\": \"67643dd4e123456789abcdef\",\n    \"user\": \"67643bb4e123456789abcdef\",\n    \"date\": \"2025-09-14T00:00:00.000Z\",\n    \"vocabularyWords\": [\n      {\n        \"word\": \"beautiful\",\n        \"meaning\": \"đẹp\",\n        \"pronunciation\": \"/ˈbjuːtɪfəl/\",\n        \"example\": \"She is very beautiful.\",\n        \"difficulty\": \"intermediate\",\n        \"category\": \"adjective\",\n        \"isLearned\": false,\n        \"reviewCount\": 0\n      },\n      {\n        \"word\": \"important\",\n        \"meaning\": \"quan trọng\",\n        \"pronunciation\": \"/ɪmˈpɔːtənt/\",\n        \"example\": \"This is very important.\",\n        \"difficulty\": \"intermediate\",\n        \"category\": \"adjective\",\n        \"isLearned\": true,\n        \"reviewCount\": 1,\n        \"lastReviewedAt\": \"2025-09-14T08:30:00.000Z\"\n      }\n    ],\n    \"totalWords\": 10,\n    \"completedWords\": 1,\n    \"isCompleted\": false,\n    \"progressPercentage\": 10,\n    \"createdAt\": \"2025-09-14T08:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Mark Word as Learned",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"wordIndex\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/vocabulary/learn",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vocabulary",
+                "learn"
+              ]
+            },
+            "description": "Đánh dấu từ vựng đã học (index từ 0)"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"wordIndex\": 0\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/vocabulary/learn",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vocabulary",
+                    "learn"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Đánh dấu từ đã học thành công\",\n  \"metadata\": {\n    \"_id\": \"67643dd4e123456789abcdef\",\n    \"completedWords\": 2,\n    \"progressPercentage\": 20,\n    \"isCompleted\": false,\n    \"vocabularyWords\": [\n      {\n        \"word\": \"beautiful\",\n        \"isLearned\": true,\n        \"reviewCount\": 1,\n        \"lastReviewedAt\": \"2025-09-14T10:15:00.000Z\"\n      }\n    ]\n  }\n}"
+            },
+            {
+              "name": "Error - Word Already Learned",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"wordIndex\": 0\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/vocabulary/learn",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vocabulary",
+                    "learn"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Từ này đã được đánh dấu là đã học\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Vocabulary History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vocabulary/history?page=1&limit=7",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vocabulary",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "7"
+                }
+              ]
+            },
+            "description": "Lấy lịch sử học từ vựng với phân trang (mặc định 7 ngày)"
+          }
+        },
+        {
+          "name": "Get Vocabulary Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vocabulary/statistics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vocabulary",
+                "statistics"
+              ]
+            },
+            "description": "Lấy thống kê học từ vựng (streak, tổng từ đã học, v.v.)"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/vocabulary/statistics",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "vocabulary",
+                    "statistics"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Lấy thống kê học từ vựng thành công\",\n  \"metadata\": {\n    \"statistics\": {\n      \"totalDays\": 15,\n      \"completedDays\": 12,\n      \"totalWords\": 150,\n      \"totalLearnedWords\": 134,\n      \"averageProgress\": 89.3,\n      \"currentStreak\": 7,\n      \"vocabularyStreak\": 7\n    },\n    \"recentActivity\": [\n      {\n        \"_id\": \"67643dd4e123456789abcdef\",\n        \"date\": \"2025-09-14T00:00:00.000Z\",\n        \"totalWords\": 10,\n        \"completedWords\": 8,\n        \"progressPercentage\": 80,\n        \"isCompleted\": true\n      },\n      {\n        \"_id\": \"67643dd3e123456789abcdef\",\n        \"date\": \"2025-09-13T00:00:00.000Z\",\n        \"totalWords\": 10,\n        \"completedWords\": 10,\n        \"progressPercentage\": 100,\n        \"isCompleted\": true\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Words for Review",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vocabulary/review?limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vocabulary",
+                "review"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Lấy từ vựng đã học để ôn tập (random từ 7 ngày qua)"
+          }
+        },
+        {
+          "name": "Update Vocabulary Preferences",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dailyWordGoal\": 15,\n  \"reminderTime\": \"09:30\",\n  \"difficultyLevel\": \"intermediate\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/vocabulary/preferences",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vocabulary",
+                "preferences"
+              ]
+            },
+            "description": "Cập nhật preferences học từ vựng (số từ/ngày, giờ nhắc, độ khó)"
+          }
+        },
+        {
+          "name": "Reset Vocabulary Progress",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vocabulary/reset",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vocabulary",
+                "reset"
+              ]
+            },
+            "description": "Reset toàn bộ tiến trình học từ vựng (xóa hết dữ liệu)"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT access token từ login API"
+    },
+    {
+      "key": "schedule_id",
+      "value": "",
+      "type": "string",
+      "description": "ID của review schedule"
+    }
+  ]
+}

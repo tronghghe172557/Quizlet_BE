@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import Submission from '../models/submission.model.js';
 import Quiz from '../models/quiz.model.js';
+import ReviewSchedule from '../models/reviewSchedule.model.js';
+import User from '../models/user.model.js';
 import { validateOwnership } from '../helpers/permissions.js';
+import ReviewScheduleLogger from '../helpers/reviewScheduleLogger.js';
 
 const SubmitQuizSchema = z.object({
   quizId: z.string().min(1, 'Quiz ID không được để trống'),
@@ -69,6 +72,81 @@ export async function submitQuiz(req, res, next) {
       totalQuestions: quiz.questions.length,
       timeSpent,
     });
+
+    // 🤖 AUTO: Tự động tạo/cập nhật review schedule với spaced repetition
+    try {
+      let reviewSchedule = await ReviewSchedule.findOne({
+        user: req.user._id,
+        quiz: quizId
+      });
+
+      if (reviewSchedule) {
+        // Đã có lịch ôn tập → Cập nhật với spaced repetition logic
+        const oldInterval = reviewSchedule.reviewInterval;
+        await reviewSchedule.updateNextReview(score);
+        
+        // Special logging for immediate retry
+        if (score < 50) {
+          ReviewScheduleLogger.logImmediateRetry(
+            req.user._id,
+            quiz.title,
+            score,
+            reviewSchedule.nextReviewAt
+          );
+        } else {
+          // Normal update logging
+          ReviewScheduleLogger.logAutoUpdate(
+            req.user._id, 
+            quiz.title, 
+            score, 
+            oldInterval, 
+            reviewSchedule.reviewInterval, 
+            reviewSchedule.nextReviewAt
+          );
+        }
+      } else {
+        // Chưa có → Tạo mới với interval ban đầu = 3 ngày
+        const nextReviewAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+        const newSchedule = await ReviewSchedule.create({
+          user: req.user._id,
+          quiz: quizId,
+          reviewInterval: 3,
+          nextReviewAt,
+          lastScore: score,
+          averageScore: score,
+          reviewCount: 1, // Đây là lần đầu tiên làm bài
+          isActive: true,
+          lastReviewedAt: new Date()
+        });
+        
+        // Log automation success
+        ReviewScheduleLogger.logAutoCreation(
+          req.user._id, 
+          quiz.title, 
+          score, 
+          nextReviewAt
+        );
+      }
+    } catch (reviewError) {
+      // Log automation error
+      ReviewScheduleLogger.logError('AUTO_SCHEDULE', reviewError, {
+        userId: req.user._id,
+        quizId: quizId,
+        score: score
+      });
+    }
+
+    // Cập nhật thống kê user
+    try {
+      await User.findByIdAndUpdate(req.user._id, {
+        $inc: { totalQuizzesCompleted: 1 },
+        $set: { 
+          averageScore: await calculateUserAverageScore(req.user._id) 
+        }
+      });
+    } catch (userUpdateError) {
+      console.log('Error updating user stats:', userUpdateError.message);
+    }
 
     // Model đã tự động populate, không cần populate thủ công
 
@@ -278,6 +356,16 @@ export async function getAllSubmissionsAdmin(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+// Helper function để tính average score của user
+async function calculateUserAverageScore(userId) {
+  const result = await Submission.aggregate([
+    { $match: { user: userId } },
+    { $group: { _id: null, averageScore: { $avg: '$score' } } }
+  ]);
+  
+  return result.length > 0 ? Math.round(result[0].averageScore) : 0;
 }
 
 export default { 

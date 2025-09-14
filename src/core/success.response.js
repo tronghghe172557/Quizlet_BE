@@ -44,4 +44,4 @@ class Created extends SuccessResponse {
   }
 }
 
-module.exports = { OK, Created, SuccessResponse };
+export { OK, Created, SuccessResponse };

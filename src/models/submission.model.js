@@ -16,6 +16,11 @@ const SubmissionSchema = new mongoose.Schema(
       ref: 'Quiz', 
       required: true 
     },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
     userEmail: { 
       type: String, 
       required: true 
@@ -62,8 +67,20 @@ SubmissionSchema.virtual('scorePercentage').get(function() {
 });
 
 // Index để tìm kiếm nhanh theo user và quiz
-SubmissionSchema.index({ userEmail: 1, quiz: 1 });
+SubmissionSchema.index({ user: 1, quiz: 1 });
 SubmissionSchema.index({ quiz: 1 });
-SubmissionSchema.index({ userEmail: 1 });
+SubmissionSchema.index({ user: 1 });
+SubmissionSchema.index({ userEmail: 1 }); // Giữ lại để backward compatibility
+
+// Middleware tự động populate quiz và user khi find
+SubmissionSchema.pre(/^find/, function() {
+  this.populate({
+    path: 'quiz',
+    select: 'title createdAt'
+  }).populate({
+    path: 'user',
+    select: 'name email'
+  });
+});
 
 export default mongoose.model('Submission', SubmissionSchema);

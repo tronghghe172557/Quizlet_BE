@@ -23,10 +23,22 @@ const QuizSchema = new mongoose.Schema(
     sourceText: { type: String, required: true },
     model: { type: String, default: 'gemini-1.5-flash' },
     questions: { type: [QuestionSchema], required: true },
-    createdBy: { type: String },
+    createdBy: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'User',
+      required: true 
+    },
   },
   { timestamps: true }
 );
+
+// Middleware tự động populate createdBy khi find
+QuizSchema.pre(/^find/, function() {
+  this.populate({
+    path: 'createdBy',
+    select: '-password -refreshToken -__v -isActive -role'
+  });
+});
 
 export default mongoose.model('Quiz', QuizSchema);
 

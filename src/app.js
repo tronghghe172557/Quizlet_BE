@@ -4,9 +4,7 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import compression from 'compression';
 import './config/mongoose.js';
-import quizzesRouter from './routes/quizzes.routes.js';
-import skillsRouter from './routes/skills.routes.js';
-import submissionsRouter from './routes/submissions.routes.js';
+import router from './routes/index.js';
 
 const app = express();
 
@@ -18,15 +16,8 @@ app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
-
 // init routes
-app.use('/api/quizzes', quizzesRouter);
-app.use('/api/skills', skillsRouter);
-app.use('/api/submissions', submissionsRouter);
+app.use(router);
 
 // func middleware
 app.use((req, res, next) => {

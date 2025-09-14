@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import Submission from '../models/submission.model.js';
 import Quiz from '../models/quiz.model.js';
+import { validateOwnership } from '../helpers/permissions.js';
 
 const SubmitQuizSchema = z.object({
   quizId: z.string().min(1, 'Quiz ID không được để trống'),
-  userEmail: z.string().email('Email không hợp lệ'),
   answers: z.array(z.object({
     questionIndex: z.number().min(0, 'Question index phải >= 0'),
     selectedChoiceIndex: z.number().min(0, 'Choice index phải >= 0'),
@@ -15,7 +15,8 @@ const SubmitQuizSchema = z.object({
 // Nộp bài quiz
 export async function submitQuiz(req, res, next) {
   try {
-    const { quizId, userEmail, answers, timeSpent } = SubmitQuizSchema.parse(req.body);
+    const { quizId, answers, timeSpent } = SubmitQuizSchema.parse(req.body);
+    const userEmail = req.user.email; // Lấy email từ JWT token
     
     // Kiểm tra quiz có tồn tại không
     const quiz = await Quiz.findById(quizId);
@@ -60,6 +61,7 @@ export async function submitQuiz(req, res, next) {
     // Lưu submission
     const submission = await Submission.create({
       quiz: quizId,
+      user: req.user._id,
       userEmail,
       answers: processedAnswers,
       score,
@@ -68,8 +70,7 @@ export async function submitQuiz(req, res, next) {
       timeSpent,
     });
 
-    // Populate quiz info để trả về
-    await submission.populate('quiz', 'title');
+    // Model đã tự động populate, không cần populate thủ công
 
     res.status(201).json({
       message: 'Nộp bài thành công',
@@ -92,10 +93,7 @@ export async function submitQuiz(req, res, next) {
 // Lấy danh sách submissions của user
 export async function getUserSubmissions(req, res, next) {
   try {
-    const { userEmail } = req.query;
-    if (!userEmail) {
-      return res.status(400).json({ message: 'userEmail là bắt buộc' });
-    }
+    const userEmail = req.user.email; // Lấy email từ JWT token
 
     const page = Math.max(parseInt(req.query.page || '1', 10), 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit || '10', 10), 1), 50);
@@ -103,11 +101,10 @@ export async function getUserSubmissions(req, res, next) {
 
     const [submissions, total] = await Promise.all([
       Submission.find({ userEmail })
-        .populate('quiz', 'title createdAt')
         .sort({ submittedAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select('score correctAnswers totalQuestions timeSpent submittedAt'),
+        .select('score correctAnswers totalQuestions timeSpent submittedAt quiz user'), // Model đã tự động populate
       Submission.countDocuments({ userEmail }),
     ]);
 
@@ -126,28 +123,39 @@ export async function getUserSubmissions(req, res, next) {
 export async function getQuizSubmissions(req, res, next) {
   try {
     const { quizId } = req.params;
-    const { userEmail } = req.query;
+
+    // Kiểm tra quiz có tồn tại không
+    const quiz = await Quiz.findById(quizId).populate('createdBy', 'name email');
+    if (!quiz) {
+      return res.status(404).json({ message: 'Không tìm thấy quiz' });
+    }
+
+    // Validate permissions: chỉ quiz owner hoặc admin mới xem được tất cả submissions
+    if (!validateOwnership(quiz, req, 'createdBy')) {
+      return res.status(403).json({ 
+        status: 'error',
+        message: 'Access denied. You can only view submissions for your own quizzes.' 
+      });
+    }
 
     const page = Math.max(parseInt(req.query.page || '1', 10), 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit || '10', 10), 1), 50);
     const skip = (page - 1) * limit;
 
-    // Tạo filter
-    const filter = { quiz: quizId };
-    if (userEmail) {
-      filter.userEmail = userEmail;
-    }
-
     const [submissions, total] = await Promise.all([
-      Submission.find(filter)
-        .populate('quiz', 'title')
+      Submission.find({ quiz: quizId })
         .sort({ submittedAt: -1 })
         .skip(skip)
-        .limit(limit),
-      Submission.countDocuments(filter),
+        .limit(limit), // Model đã tự động populate quiz và user
+      Submission.countDocuments({ quiz: quizId }),
     ]);
 
     res.json({
+      quiz: {
+        id: quiz._id,
+        title: quiz.title,
+        createdBy: quiz.createdBy
+      },
       submissions,
       page,
       limit,
@@ -163,11 +171,18 @@ export async function getSubmissionById(req, res, next) {
   try {
     const { id } = req.params;
     
-    const submission = await Submission.findById(id)
-      .populate('quiz', 'title questions');
+    const submission = await Submission.findById(id); // Model đã tự động populate
 
     if (!submission) {
       return res.status(404).json({ message: 'Không tìm thấy submission' });
+    }
+
+    // Validate ownership: chỉ owner hoặc admin mới xem được
+    if (!validateOwnership(submission, req, 'user')) {
+      return res.status(403).json({ 
+        status: 'error',
+        message: 'Access denied. You can only view your own submissions.' 
+      });
     }
 
     res.json(submission);
@@ -227,10 +242,49 @@ export async function getQuizStats(req, res, next) {
   }
 }
 
+// Admin function: Lấy tất cả submissions (chỉ dành cho admin)
+export async function getAllSubmissionsAdmin(req, res, next) {
+  try {
+    const page = Math.max(parseInt(req.query.page || '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || '20', 10), 1), 100);
+    const skip = (page - 1) * limit;
+
+    const { userEmail, quizId } = req.query;
+    const filter = {};
+    
+    if (userEmail) filter.userEmail = { $regex: userEmail, $options: 'i' };
+    if (quizId) filter.quiz = quizId;
+
+    const [submissions, total] = await Promise.all([
+      Submission.find(filter) // Model đã tự động populate
+        .sort({ submittedAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Submission.countDocuments(filter),
+    ]);
+
+    res.json({
+      status: 'success',
+      data: {
+        submissions,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export default { 
   submitQuiz, 
   getUserSubmissions, 
   getQuizSubmissions, 
   getSubmissionById,
-  getQuizStats 
+  getQuizStats,
+  getAllSubmissionsAdmin 
 };

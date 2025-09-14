@@ -271,7 +271,7 @@ export async function unshareQuiz(req, res, next) {
   }
 }
 
-// Lấy danh sách users đã được chia sẻ quiz
+// Lấy danh sách users được chia sẻ quiz
 export async function getQuizSharedUsers(req, res, next) {
   try {
     const quiz = req.resource; // Từ middleware validateResourceOwnership
@@ -293,6 +293,65 @@ export async function getQuizSharedUsers(req, res, next) {
   }
 }
 
+// Cập nhật câu hỏi cụ thể trong quiz
+export async function updateQuizQuestion(req, res, next) {
+  try {
+    const quiz = req.resource; // Từ middleware validateResourceOwnership
+    const questionIndex = parseInt(req.params.questionIndex);
+    
+    if (questionIndex < 0 || questionIndex >= quiz.questions.length) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Chỉ số câu hỏi không hợp lệ'
+      });
+    }
+
+    const UpdateQuestionSchema = z.object({
+      prompt: z.string().min(1, 'Câu hỏi không được để trống').optional(),
+      explanation: z.string().optional(),
+      choices: z.array(z.object({
+        text: z.string().min(1, 'Lựa chọn không được để trống'),
+        isCorrect: z.boolean()
+      })).min(2, 'Phải có ít nhất 2 lựa chọn').optional()
+    });
+    
+    const updateData = UpdateQuestionSchema.parse(req.body);
+    
+    // Cập nhật question
+    if (updateData.prompt) {
+      quiz.questions[questionIndex].prompt = updateData.prompt;
+    }
+    if (updateData.explanation !== undefined) {
+      quiz.questions[questionIndex].explanation = updateData.explanation;
+    }
+    if (updateData.choices) {
+      // Validate có ít nhất 1 đáp án đúng
+      const hasCorrectAnswer = updateData.choices.some(choice => choice.isCorrect);
+      if (!hasCorrectAnswer) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Phải có ít nhất 1 đáp án đúng'
+        });
+      }
+      quiz.questions[questionIndex].choices = updateData.choices;
+    }
+    
+    await quiz.save();
+    
+    res.json({
+      status: 'success',
+      message: 'Cập nhật câu hỏi thành công',
+      data: {
+        question: quiz.questions[questionIndex],
+        questionIndex
+      }
+    });
+    
+  } catch (err) {
+    next(err);
+  }
+}
+
 export default { 
   createQuiz, 
   listQuizzes, 
@@ -302,6 +361,7 @@ export default {
   getMyQuizzes,
   shareQuiz,
   unshareQuiz,
-  getQuizSharedUsers 
+  getQuizSharedUsers,
+  updateQuizQuestion 
 };
 

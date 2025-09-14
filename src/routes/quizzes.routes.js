@@ -8,7 +8,8 @@ import {
   getMyQuizzes,
   shareQuiz,
   unshareQuiz,
-  getQuizSharedUsers 
+  getQuizSharedUsers,
+  updateQuizQuestion 
 } from '../controllers/quizzes.controller.js';
 import { authenticate, optionalAuth, requireRole, requireOwnerOrAdmin } from '../middlewares/auth.js';
 import { validateResourceOwnership } from '../helpers/permissions.js';
@@ -28,6 +29,9 @@ router.get('/:id', authenticate, asyncHandler(getQuizById));
 
 // Cập nhật quiz - chỉ owner hoặc admin
 router.put('/:id', authenticate, requireOwnerOrAdmin(), validateResourceOwnership(Quiz), asyncHandler(updateQuiz));
+
+// Cập nhật câu hỏi cụ thể trong quiz - chỉ owner hoặc admin
+router.put('/:id/questions/:questionIndex', authenticate, validateResourceOwnership(Quiz), asyncHandler(updateQuizQuestion));
 
 // Xóa quiz - chỉ owner hoặc admin  
 router.delete('/:id', authenticate, requireOwnerOrAdmin(), validateResourceOwnership(Quiz), asyncHandler(deleteQuiz));

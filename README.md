@@ -1,53 +1,85 @@
-# Quizrise Backend API
+# Quizrise Backend - English Vocabulary Quiz System
 
-## 📖 Tổng quan
+## � Tổng quan
 
-**Quizrise** là hệ thống tạo và quản lý quiz học từ vựng tiếng Anh được hỗ trợ bởi AI Google Gemini. Hệ thống cho phép:
+Quizrise là hệ thống tạo quiz từ vựng tiếng Anh thông minh sử dụng AI (Google Gemini) để tự động sinh câu hỏi trắc nghiệm từ danh sách từ vựng. Hệ thống hỗ trợ chia sẻ quiz và quản lý quyền truy cập dựa trên vai trò người dùng.
 
-- 🤖 **Tạo quiz tự động** từ văn bản tiếng Việt bằng AI Gemini
-- 👥 **Chia sẻ quiz** giữa người dùng (chỉ Admin)
-- 📊 **Theo dõi kết quả** học tập và tiến độ
-- 🎯 **Quản lý kỹ năng** theo từng chủ đề
-- 📅 **Lịch ôn tập** thông minh
+## 🚀 Tính năng chính
 
-## 🏗️ Kiến trúc hệ thống
+### 1. **Tạo Quiz AI-Powered**
+- Tự động sinh câu hỏi từ danh sách từ vựng
+- Hỗ trợ nhiều dạng câu hỏi: vocabulary, grammar, reading, conversation, mixed
+- Tùy chỉnh số câu hỏi, số lựa chọn, cấp độ tiếng Anh
+- Failover system với nhiều API key Google Gemini
 
-### Core Domains
-- **Quiz Generation**: Tạo flashcard từ AI với IPA, mnemonic
-- **Quiz Submissions**: Kiểm tra và chấm điểm tự động
-- **Skills Management**: Theo dõi tiến độ học theo chủ đề
-- **User Management**: Xác thực, phân quyền, chia sẻ quiz
+### 2. **Chia sẻ Quiz**
+- Chia sẻ quiz với người dùng khác
+- Quản lý quyền truy cập dựa trên role (admin/user)
+- Admin có thể truy cập tất cả quiz, user chỉ truy cập quiz của mình và được chia sẻ
 
-### Tech Stack
-- **Backend**: Node.js + Express.js
-- **Database**: MongoDB + Mongoose
-- **AI Service**: Google Gemini (failover với nhiều API keys)
-- **Authentication**: JWT (Access + Refresh tokens)
-- **Validation**: Zod schemas
+### 3. **Submission System**
+- Nộp bài làm quiz với tính điểm tự động
+- Lưu trữ lịch sử làm bài
+- Phân tích kết quả chi tiết
 
-## 🚀 Cài đặt & chạy
+### 4. **Skills Management**
+- Quản lý kỹ năng theo danh mục
+- Theo dõi tiến độ học tập
 
-### Yêu cầu hệ thống
-- Node.js 18+
-- MongoDB (local hoặc Atlas)
-- Google Gemini API keys
+## � Cài đặt
 
-### 1. Clone và cài đặt
+### Prerequisites
+- Node.js >= 18.0.0
+- MongoDB >= 6.0
+- Google Gemini API Keys
+
+### 1. Clone Repository
 ```bash
-git clone <repository-url>
-cd quizrise-backend
+git clone https://github.com/tronghghe172557/Quizlet_BE.git
+cd Quizlet_BE
+```
+
+### 2. Cài đặt Dependencies
+```bash
 npm install
 ```
 
-### 2. Cấu hình môi trường
-Tạo file `.env`:
+### 3. Cấu hình Environment Variables
+Tạo file `.env` trong thư mục root:
 
 ```env
+# Database
+MONGODB_URI=mongodb://username:password@localhost:27017/quizrise
+
 # Server
 PORT=3001
-NODE_ENV=development
 
-# Database
+# Google Gemini API Keys (Failover system)
+GEMINI_API_KEY_1=your_primary_gemini_api_key
+GEMINI_API_KEY_2=your_backup_gemini_api_key_1
+GEMINI_API_KEY_3=your_backup_gemini_api_key_2
+# ... có thể thêm tối đa 8 keys
+
+# Learning Configuration
+SKILL=B1
+
+# JWT Secret (for authentication)
+JWT_SECRET=your_jwt_secret_key
+```
+
+### 4. Khởi chạy
+
+#### Development Mode
+```bash
+npm run dev
+```
+
+#### Production Mode
+```bash
+npm start
+```
+
+#### Với Docker
 MONGODB_URI=mongodb://localhost:27017/quizrise
 # Hoặc MongoDB Atlas:
 # MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/quizrise

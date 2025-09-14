@@ -8,19 +8,67 @@ const CreateQuizSchema = z.object({
   title: z.string().min(1, 'title không được để trống'),
   text: z.string().min(10, 'text quá ngắn, tối thiểu 10 ký tự'),
   model: z.string().optional(),
+  // Quiz configuration fields - để frontend có thể truyền vào
+  questionCount: z.number().min(1, 'Số câu hỏi phải ít nhất 1').max(25, 'Số câu hỏi tối đa 25').optional(),
+  questionType: z.enum(['vocabulary', 'grammar', 'reading', 'conversation', 'mixed']).optional(),
+  choicesPerQuestion: z.number().min(2, 'Tối thiểu 2 lựa chọn').max(6, 'Tối đa 6 lựa chọn').optional(),
+  englishLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']).optional(),
+  displayLanguage: z.enum(['vietnamese', 'english', 'mixed']).optional(),
+  // Prompt mở rộng để thay thế prompt mặc định
+  promptExtension: z.string().max(4000, 'Prompt mở rộng không được quá 4000 ký tự').optional(),
 });
 
 export async function createQuiz(req, res, next) {
   try {
-    const { title, text, model } = CreateQuizSchema.parse(req.body);
-    const generated = await generateQuizFromText(text, model);
+    // Parse và validate input từ frontend
+    const validatedData = CreateQuizSchema.parse(req.body);
+    const { 
+      title, 
+      text, 
+      model = 'gemini-2.0-flash',
+      questionCount = 4,
+      questionType = 'mixed',
+      choicesPerQuestion = 4,
+      englishLevel = 'B1',
+      displayLanguage = 'vietnamese',
+      promptExtension = null
+    } = validatedData;
+
+    // Parse vocabulary từ text (mỗi dòng là 1 từ)
+    const vocabulary = text.split(/[,\n]/).map(word => word.trim()).filter(word => word.length > 0);
+
+    // Tạo config cho Gemini AI theo format mong muốn
+    const quizConfig = {
+      "số câu": questionCount,
+      "dạng tạo câu hỏi": questionType,
+      "số lựa chọn trong 1 câu": choicesPerQuestion,
+      "note": "mỗi câu có đúng 1 đáp án đúng",
+      "từ mới": vocabulary,
+      "cấp độ tiếng Anh": englishLevel,
+      "ngôn ngữ hiển thị câu hỏi": displayLanguage === 'vietnamese' ? 'Vietnamese' : displayLanguage === 'english' ? 'English' : 'Mixed'
+    };
+
+    // Gọi AI service để tạo quiz
+    const generated = await generateQuizFromText(text, model, quizConfig, promptExtension);
+    
+    // Lưu vào database với đầy đủ metadata
     const doc = await Quiz.create({
       title,
       sourceText: text,
       model: generated.model,
       questions: generated.questions,
       createdBy: req.user._id,
+      // Metadata fields theo đúng schema
+      questionCount,
+      questionType,
+      choicesPerQuestion,
+      vocabulary,
+      englishLevel,
+      displayLanguage,
+      note: 'mỗi câu có đúng 1 đáp án đúng',
+      promptExtension
     });
+    
     res.status(201).json(doc);
   } catch (err) {
     next(err);
@@ -173,44 +221,55 @@ export async function getMyQuizzes(req, res, next) {
 // Chia sẻ quiz với users khác
 export async function shareQuiz(req, res, next) {
   try {
-    // Chỉ admin mới được chia sẻ quiz
-    if (req.user.role !== 'admin') {
+    // Cả admin và user đều có thể chia sẻ quiz của mình
+    // Admin có thể chia sẻ bất kỳ quiz nào, user chỉ chia sẻ quiz của mình
+    const quiz = req.resource; // Từ middleware validateResourceOwnership
+    const isOwner = quiz.createdBy._id.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    
+    if (!isOwner && !isAdmin) {
       return res.status(403).json({
         status: 'error',
-        message: 'Chỉ admin mới có quyền chia sẻ quiz'
+        message: 'Bạn không có quyền chia sẻ quiz này'
       });
     }
 
     const ShareQuizSchema = z.object({
-      userIds: z.array(z.string().min(1, 'User ID không hợp lệ')).min(1, 'Phải có ít nhất 1 user')
+      userEmails: z.array(z.string().email('Email không hợp lệ')).min(1, 'Phải có ít nhất 1 email')
     });
     
-    const { userIds } = ShareQuizSchema.parse(req.body);
-    const quiz = req.resource; // Từ middleware validateResourceOwnership
+    const { userEmails } = ShareQuizSchema.parse(req.body);
     
-    // Validate user IDs
-    const validUserIds = [];
-    for (const userId of userIds) {
-      if (mongoose.Types.ObjectId.isValid(userId)) {
-        const user = await User.findById(userId);
-        if (user && user.isActive) {
-          validUserIds.push(new mongoose.Types.ObjectId(userId));
-        }
-      }
-    }
+    // Tìm users theo email
+    const users = await User.find({ 
+      email: { $in: userEmails },
+      isActive: true
+    }).select('_id email role');
     
-    if (validUserIds.length === 0) {
+    if (users.length === 0) {
       return res.status(400).json({
         status: 'error',
-        message: 'Không có user hợp lệ nào để chia sẻ'
+        message: 'Không tìm thấy user hợp lệ nào với email đã cung cấp'
       });
     }
     
+    // User thường không thể chia sẻ với admin
+    if (req.user.role !== 'admin') {
+      const adminUsers = users.filter(user => user.role === 'admin');
+      if (adminUsers.length > 0) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'User không thể chia sẻ quiz với admin'
+        });
+      }
+    }
+    
     // Thêm users vào danh sách chia sẻ (không trùng lặp)
+    const userIds = users.map(user => user._id);
     const currentSharedWith = quiz.sharedWith || [];
     const newSharedWith = [...new Set([
       ...currentSharedWith.map(id => id.toString()),
-      ...validUserIds.map(id => id.toString())
+      ...userIds.map(id => id.toString())
     ])].map(id => new mongoose.Types.ObjectId(id));
     
     quiz.sharedWith = newSharedWith;
@@ -218,7 +277,7 @@ export async function shareQuiz(req, res, next) {
     
     res.json({
       status: 'success',
-      message: `Đã chia sẻ quiz với ${validUserIds.length} user(s)`,
+      message: `Đã chia sẻ quiz với ${users.length} user(s)`,
       data: {
         quiz: quiz,
         sharedWithCount: quiz.sharedWith.length
@@ -233,20 +292,30 @@ export async function shareQuiz(req, res, next) {
 // Hủy chia sẻ quiz với users
 export async function unshareQuiz(req, res, next) {
   try {
-    // Chỉ admin mới được hủy chia sẻ quiz
-    if (req.user.role !== 'admin') {
+    // Cả admin và owner đều có thể hủy chia sẻ
+    const quiz = req.resource; // Từ middleware validateResourceOwnership
+    const isOwner = quiz.createdBy._id.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    
+    if (!isOwner && !isAdmin) {
       return res.status(403).json({
         status: 'error',
-        message: 'Chỉ admin mới có quyền hủy chia sẻ quiz'
+        message: 'Bạn không có quyền hủy chia sẻ quiz này'
       });
     }
 
     const UnshareQuizSchema = z.object({
-      userIds: z.array(z.string().min(1, 'User ID không hợp lệ')).min(1, 'Phải có ít nhất 1 user')
+      userEmails: z.array(z.string().email('Email không hợp lệ')).min(1, 'Phải có ít nhất 1 email')
     });
     
-    const { userIds } = UnshareQuizSchema.parse(req.body);
-    const quiz = req.resource; // Từ middleware validateResourceOwnership
+    const { userEmails } = UnshareQuizSchema.parse(req.body);
+    
+    // Tìm users theo email
+    const users = await User.find({ 
+      email: { $in: userEmails }
+    }).select('_id email');
+    
+    const userIds = users.map(user => user._id.toString());
     
     // Loại bỏ users khỏi danh sách chia sẻ
     const currentSharedWith = quiz.sharedWith || [];

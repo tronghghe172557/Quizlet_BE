@@ -27,64 +27,95 @@ Authorization: Bearer <your_access_token>
 
 ⚠️ **Quyền hạn**: Chỉ **Admin** mới có thể tạo quiz mới.
 
-Tạo một quiz mới với câu hỏi và đáp án.
+Tạo một quiz mới với câu hỏi và đáp án từ AI. Frontend có thể truyền đầy đủ config để tùy chỉnh quiz.
 
 ### Request Body:
 ```json
 {
-  "title": "English Vocabulary - Chapter 1",
-  "text": "Từ vựng tiếng Anh cơ bản cho người mới bắt đầu. Bao gồm các từ thường dùng trong giao tiếp hàng ngày.",
-  "model": "gemini-1.5-flash"
+  "title": "English Vocabulary - Family",
+  "text": "family\nmother\nfather\nbrother\nsister\nparents\nchildren",
+  "model": "gemini-2.0-flash",
+  "questionCount": 5,
+  "questionType": "vocabulary", 
+  "choicesPerQuestion": 4,
+  "englishLevel": "B1",
+  "displayLanguage": "vietnamese"
 }
 ```
 
 ### Parameters:
 - `title` (string, required): Tiêu đề quiz
-- `text` (string, required): Văn bản nguồn để AI tạo quiz (tối thiểu 10 ký tự)
-- `model` (string, optional): Model AI sử dụng. Mặc định: "gemini-1.5-flash"
+- `text` (string, required): Danh sách từ vựng (mỗi từ một dòng) (tối thiểu 10 ký tự)
+- `model` (string, optional): Model AI. Mặc định: "gemini-2.0-flash"
 
-⚠️ **Lưu ý**: API này sử dụng AI để tự động tạo câu hỏi từ văn bản nguồn. Không cần truyền `questions` thủ công.
+**� Quiz Config (Frontend có thể truyền):**
+- `questionCount` (number, optional): Số câu hỏi (1-20). Mặc định: 4
+- `questionType` (enum, optional): Loại câu hỏi. Mặc định: 'mixed'
+  - `vocabulary`: Từ vựng 
+  - `grammar`: Ngữ pháp
+  - `reading`: Đọc hiểu
+  - `conversation`: Hội thoại
+  - `mixed`: Kết hợp
+- `choicesPerQuestion` (number, optional): Số lựa chọn (2-6). Mặc định: 4
+- `englishLevel` (enum, optional): Cấp độ. Mặc định: 'B1'
+  - `A1`, `A2`, `B1`, `B2`, `C1`, `C2`
+- `displayLanguage` (enum, optional): Ngôn ngữ hiển thị. Mặc định: 'vietnamese'
+  - `vietnamese`, `english`, `mixed`
+
+💡 **Logic hoạt động:**
+1. Frontend gửi config + danh sách từ vựng
+2. Backend tạo quiz config cho AI
+3. AI tạo câu hỏi theo config
+4. Lưu quiz với đầy đủ metadata vào database
 
 ### Response (201):
 ```json
 {
   "_id": "67643aa4e123456789abcdef",
-  "title": "English Vocabulary - Chapter 1",
-  "sourceText": "Từ vựng tiếng Anh cơ bản cho người mới bắt đầu. Bao gồm các từ thường dùng trong giao tiếp hàng ngày.",
-  "model": "gemini-1.5-flash",
+  "title": "English Vocabulary - Family",
+  "sourceText": "family\nmother\nfather\nbrother\nsister\nparents\nchildren",
+  "model": "gemini-2.0-flash",
   "questions": [
     {
-      "prompt": "Từ 'beautiful' trong tiếng Việt có nghĩa là gì?",
+      "prompt": "Từ mới: family\nĐịnh nghĩa (EN): A group consisting of parents and children living together\nTừ loại: noun\nNghĩa tiếng Việt: gia đình\nMẹo ghi nhớ: 'Family' giống như 'fam' (gia đình) + 'lily' (hoa ly) - gia đình đẹp như hoa ly!\nPhát âm (IPA): /ˈfæməli/",
       "choices": [
-        {
-          "text": "đẹp",
-          "isCorrect": true
-        },
-        {
-          "text": "xấu",
-          "isCorrect": false
-        },
-        {
-          "text": "to",
-          "isCorrect": false
-        },
-        {
-          "text": "nhỏ",
-          "isCorrect": false
-        }
+        {"text": "gia đình", "isCorrect": true},
+        {"text": "bạn bè", "isCorrect": false},
+        {"text": "đồng nghiệp", "isCorrect": false}, 
+        {"text": "hàng xóm", "isCorrect": false}
       ],
-      "explanation": "Beautiful /ˈbjuːtɪfəl/ có nghĩa là đẹp trong tiếng Việt"
+      "explanation": "Family nghĩa là gia đình. Ví dụ: 'My family is very important to me.'"
     }
   ],
   "createdBy": {
     "_id": "67643bb4e123456789abcdef",
-    "fullName": "Nguyễn Văn A",
+    "fullName": "Admin User",
     "email": "admin@example.com"
   },
+  "sharedWith": [],
+  "questionCount": 5,
+  "questionType": "vocabulary",
+  "choicesPerQuestion": 4,
+  "vocabulary": ["family", "mother", "father", "brother", "sister", "parents", "children"],
+  "englishLevel": "B1",
+  "displayLanguage": "vietnamese",
+  "note": "mỗi câu có đúng 1 đáp án đúng",
   "createdAt": "2025-09-14T10:00:00.000Z",
   "updatedAt": "2025-09-14T10:00:00.000Z"
 }
 ```
+
+### Lỗi phổ biến:
+- **403**: Không có quyền tạo quiz (chỉ admin)
+- **400**: Dữ liệu không hợp lệ
+  - title rỗng
+  - text quá ngắn (< 10 ký tự)
+  - questionCount không hợp lệ (không trong khoảng 1-20)
+  - choicesPerQuestion không hợp lệ (không trong khoảng 2-6)
+  - questionType không hợp lệ
+  - englishLevel không hợp lệ
+  - displayLanguage không hợp lệ
+- **500**: Lỗi AI service (Gemini API không khả dụng)
 
 ### Lỗi phổ biến:
 - **403**: Không có quyền tạo quiz (chỉ admin)
@@ -472,9 +503,11 @@ curl -X GET "http://localhost:3001/api/auth/users?search=john&page=1&limit=10" \
 
 **POST** `/api/quizzes/{quizId}/share`
 
-⚠️ **Quyền hạn**: Chỉ **Admin** mới có thể chia sẻ quiz.
+⚠️ **Quyền hạn**: 
+- **Admin**: Có thể chia sẻ bất kỳ quiz nào với tất cả users
+- **User**: Chỉ có thể chia sẻ quiz của mình, không thể chọn admin làm người nhận
 
-Thêm users vào danh sách được chia sẻ quiz.
+Thêm users vào danh sách được chia sẻ quiz bằng email.
 
 ### URL Parameters:
 - `quizId` (string): ID của quiz cần chia sẻ
@@ -482,24 +515,17 @@ Thêm users vào danh sách được chia sẻ quiz.
 ### Request Body:
 ```json
 {
-  "userIds": [
-    "60d5ecb74b24a10004f1c8e1",
-    "60d5ecb74b24a10004f1c8e2",
-    "60d5ecb74b24a10004f1c8e3"
-  ]
+  "userEmails": ["user1@example.com", "user2@example.com", "student@example.com"]
 }
 ```
 
 ### Request Example:
 ```bash
 curl -X POST "http://localhost:3001/api/quizzes/60d5ecb74b24a10004f1c8d1/share" \
-  -H "Authorization: Bearer <admin_access_token>" \
+  -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "userIds": [
-      "60d5ecb74b24a10004f1c8e1",
-      "60d5ecb74b24a10004f1c8e2"
-    ]
+    "userEmails": ["user1@example.com", "user2@example.com"]
   }'
 ```
 
@@ -514,19 +540,26 @@ curl -X POST "http://localhost:3001/api/quizzes/60d5ecb74b24a10004f1c8d1/share" 
       "title": "Từ vựng chủ đề gia đình",
       "sharedWith": [
         "60d5ecb74b24a10004f1c8e1",
-        "60d5ecb74b24a10004f1c8e2",
-        "60d5ecb74b24a10004f1c8e3"
+        "60d5ecb74b24a10004f1c8e2"
       ]
     },
-    "sharedWithCount": 3
+    "sharedWithCount": 2
   }
 }
 ```
 
 ### Lỗi phổ biến:
-- **403**: User không phải Admin
-- **404**: Quiz không tồn tại
-- **400**: Không có user hợp lệ để chia sẻ
+- **403**: Bạn không có quyền chia sẻ quiz này
+- **404**: Quiz không tồn tại  
+- **400**: Không tìm thấy user hợp lệ với email đã cung cấp
+- **403**: User không thể chia sẻ quiz với admin
+- **400**: Email không hợp lệ
+
+### 💡 Logic hoạt động:
+1. Validate quyền (owner hoặc admin)
+2. Tìm users theo email 
+3. Kiểm tra user không thể share với admin
+4. Thêm vào sharedWith array (không trùng lặp)
 
 ---
 
@@ -534,9 +567,11 @@ curl -X POST "http://localhost:3001/api/quizzes/60d5ecb74b24a10004f1c8d1/share" 
 
 **DELETE** `/api/quizzes/{quizId}/share`
 
-⚠️ **Quyền hạn**: Chỉ **Admin** mới có thể hủy chia sẻ.
+⚠️ **Quyền hạn**: 
+- **Admin**: Có thể hủy chia sẻ bất kỳ quiz nào
+- **User**: Chỉ có thể hủy chia sẻ quiz của mình
 
-Loại bỏ users khỏi danh sách được chia sẻ quiz.
+Loại bỏ users khỏi danh sách được chia sẻ quiz bằng email.
 
 ### URL Parameters:
 - `quizId` (string): ID của quiz cần hủy chia sẻ
@@ -544,10 +579,7 @@ Loại bỏ users khỏi danh sách được chia sẻ quiz.
 ### Request Body:
 ```json
 {
-  "userIds": [
-    "60d5ecb74b24a10004f1c8e1",
-    "60d5ecb74b24a10004f1c8e3"
-  ]
+  "userEmails": ["user1@example.com", "user3@example.com"]
 }
 ```
 
@@ -568,6 +600,12 @@ Loại bỏ users khỏi danh sách được chia sẻ quiz.
   }
 }
 ```
+
+### 💡 Logic hoạt động:
+1. Validate quyền (owner hoặc admin)
+2. Tìm users theo email
+3. Remove khỏi sharedWith array
+4. Trả về số lượng đã hủy
 
 ---
 
@@ -694,9 +732,9 @@ const quizData = await fetchQuizzes(1, 'vocabulary', 'english');
 console.log(`Found ${quizData.pagination.totalItems} quizzes`);
 ```
 
-### 2. Tạo quiz mới (Admin):
+### 2. Tạo quiz mới với full config (Admin):
 ```javascript
-const createNewQuiz = async (quizData) => {
+const createQuizWithConfig = async (quizData) => {
   const response = await fetch('/api/quizzes', {
     method: 'POST',
     headers: {
@@ -714,17 +752,35 @@ const createNewQuiz = async (quizData) => {
   return response.json();
 };
 
-// Usage
-const newQuiz = {
-  title: "Test Quiz",
-  text: "Văn bản nguồn để AI tạo câu hỏi từ đây. Nội dung cần đủ dài và có thông tin để AI có thể tạo ra các câu hỏi chất lượng."
+// Usage: Frontend có thể truyền đầy đủ config
+const newQuizData = {
+  title: "Family Vocabulary Quiz", 
+  text: "family\nmother\nfather\nbrother\nsister\nparents\nchildren",
+  // Frontend config - tất cả optional
+  model: "gemini-2.0-flash",
+  questionCount: 7,           // Từ form/settings
+  questionType: "vocabulary", // Từ dropdown
+  choicesPerQuestion: 4,      // Từ slider
+  englishLevel: "B2",         // Từ select
+  displayLanguage: "vietnamese" // Từ radio buttons
 };
 
 try {
-  const result = await createNewQuiz(newQuiz);
-  console.log('Quiz created:', result.metadata._id);
+  const result = await createQuizWithConfig(newQuizData);
+  console.log('Quiz created:', result._id);
+  console.log('Config applied:', {
+    questionCount: result.questionCount,
+    questionType: result.questionType,
+    vocabulary: result.vocabulary,
+    englishLevel: result.englishLevel
+  });
+  console.log('Generated questions:', result.questions.length);
 } catch (error) {
   console.error('Failed to create quiz:', error.message);
+  // Handle validation errors from backend
+  if (error.message.includes('Số câu hỏi')) {
+    // Show questionCount validation error
+  }
 }
 ```
 
@@ -793,9 +849,9 @@ try {
 }
 ```
 
-### 5. Quiz Sharing (Admin Only):
+### 5. Quiz Sharing (Admin và User):
 ```javascript
-// Lấy danh sách users để chia sẻ
+// Lấy danh sách users để chia sẻ (Admin only)
 const getUsers = async (search = '', page = 1) => {
   const params = new URLSearchParams({
     search,
@@ -812,24 +868,50 @@ const getUsers = async (search = '', page = 1) => {
   return response.json();
 };
 
-// Chia sẻ quiz với users
-const shareQuiz = async (quizId, userIds) => {
+// Chia sẻ quiz với users (Admin và User)
+const shareQuiz = async (quizId, userEmails) => {
   const response = await fetch(`/api/quizzes/${quizId}/share`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${adminAccessToken}`,
+      'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ userIds })
+    body: JSON.stringify({ userEmails })
+  });
+
+  return response.json();
+};
+
+// Hủy chia sẻ quiz
+const unshareQuiz = async (quizId, userEmails) => {
+  const response = await fetch(`/api/quizzes/${quizId}/share`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ userEmails })
   });
 
   return response.json();
 };
 
 // Usage
-const users = await getUsers('john', 1);
-const userIds = users.data.users.map(user => user._id);
-const shareResult = await shareQuiz('67643aa4e123456789abcdef', userIds);
+try {
+  // Admin: Lấy danh sách users
+  const users = await getUsers('john', 1);
+  const userEmails = users.data.users.map(user => user.email);
+  
+  // Chia sẻ quiz với users
+  const shareResult = await shareQuiz('67643aa4e123456789abcdef', userEmails);
+  console.log('Shared with:', shareResult.data.sharedWithCount, 'users');
+  
+  // Hủy chia sẻ với một số users
+  const unshareResult = await unshareQuiz('67643aa4e123456789abcdef', ['user1@example.com']);
+  console.log('Unshared from:', unshareResult.message);
+} catch (error) {
+  console.error('Sharing failed:', error.message);
+}
 ```
 
 ## Backend Integration
@@ -987,10 +1069,18 @@ export const shareQuiz = async (req, res, next) => {
 
 ## 4. Data Validation:
 ```javascript
+### 4. Data Validation:
+```javascript
 const CreateQuizSchema = z.object({
   title: z.string().min(1, 'title không được để trống'),
   text: z.string().min(10, 'text quá ngắn, tối thiểu 10 ký tự'),
-  model: z.string().optional()
+  model: z.string().optional(),
+  // Quiz configuration fields
+  questionCount: z.number().min(1, 'Số câu hỏi phải ít nhất 1').max(20, 'Số câu hỏi tối đa 20').optional(),
+  questionType: z.enum(['vocabulary', 'grammar', 'reading', 'conversation', 'mixed']).optional(),
+  choicesPerQuestion: z.number().min(2, 'Tối thiểu 2 lựa chọn').max(6, 'Tối đa 6 lựa chọn').optional(),
+  englishLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']).optional(),
+  displayLanguage: z.enum(['vietnamese', 'english', 'mixed']).optional()
 });
 
 const UpdateQuizSchema = z.object({
@@ -1007,26 +1097,29 @@ const UpdateQuestionSchema = z.object({
 });
 
 const ShareQuizSchema = z.object({
-  userIds: z.array(z.string().min(1, 'User ID không hợp lệ')).min(1, 'Phải có ít nhất 1 user')
+  userEmails: z.array(z.string().email('Email không hợp lệ')).min(1, 'Phải có ít nhất 1 email')
 });
+```
 ```
 
 ## 5. Quiz Sharing Workflow:
 ```javascript
-// Step 1: Admin gets list of users
+### 5. Quiz Sharing Workflow:
+```javascript
+// Step 1: Admin/User gets list of users (Admin only for getting all users)
 const users = await fetch('/api/auth/users?search=john', {
   headers: { 'Authorization': `Bearer ${adminToken}` }
 });
 
-// Step 2: Admin shares quiz with selected users
+// Step 2: Share quiz with selected users (Admin: any quiz, User: own quiz only)
 const shareResult = await fetch('/api/quizzes/123/share', {
   method: 'POST',
   headers: { 
-    'Authorization': `Bearer ${adminToken}`,
+    'Authorization': `Bearer ${userToken}`,
     'Content-Type': 'application/json' 
   },
   body: JSON.stringify({
-    userIds: ['user1_id', 'user2_id']
+    userEmails: ['user1@example.com', 'user2@example.com']
   })
 });
 
@@ -1035,17 +1128,23 @@ const userQuizzes = await fetch('/api/quizzes/my/quizzes?type=shared', {
   headers: { 'Authorization': `Bearer ${userToken}` }
 });
 
-// Step 4: Admin can unshare if needed
+// Step 4: Owner/Admin can unshare if needed
 const unshareResult = await fetch('/api/quizzes/123/share', {
   method: 'DELETE',
   headers: { 
-    'Authorization': `Bearer ${adminToken}`,
+    'Authorization': `Bearer ${ownerToken}`,
     'Content-Type': 'application/json' 
   },
   body: JSON.stringify({
-    userIds: ['user1_id']
+    userEmails: ['user1@example.com']
   })
 });
+
+// Step 5: Check who has access to quiz
+const sharedUsers = await fetch('/api/quizzes/123/shared-users', {
+  headers: { 'Authorization': `Bearer ${ownerToken}` }
+});
+```
 ```
 
 ---
@@ -1133,10 +1232,54 @@ SKILL=A2-B1
 ```json
 {
   "status": "error",
-  "message": "Chỉ admin mới có quyền chia sẻ quiz"
+  "message": "Bạn không có quyền chia sẻ quiz này"
 }
 ```
-**Solution**: Đảm bảo user có role 'admin' để sử dụng sharing features.
+**Solution**: 
+- Admin có thể chia sẻ bất kỳ quiz nào
+- User chỉ có thể chia sẻ quiz của mình (createdBy)
+- Kiểm tra ownership trước khi chia sẻ
+
+### 8. **400 Invalid Email Format:**
+```json
+{
+  "status": "error",
+  "message": "Email không hợp lệ"
+}
+```
+**Solution**: Đảm bảo format email đúng trong userEmails array.
+
+### 9. **403 Cannot Share With Admin:**
+```json
+{
+  "status": "error", 
+  "message": "User không thể chia sẻ quiz với admin"
+}
+```
+**Solution**: User thường không thể chia sẻ quiz với admin, chỉ admin mới có thể.
+
+### 10. **400 Invalid Quiz Configuration:**
+```json
+{
+  "status": "error",
+  "message": "Số câu hỏi phải từ 1 đến 20"
+}
+```
+**Solution**: Kiểm tra các tham số metadata từ frontend:
+- `questionCount`: 1-20
+- `choicesPerQuestion`: 2-6  
+- `questionType`: vocabulary|grammar|reading|conversation|mixed
+- `englishLevel`: A1|A2|B1|B2|C1|C2
+- `displayLanguage`: vietnamese|english|mixed
+
+### 11. **400 No Valid Users Found:**
+```json
+{
+  "status": "error",
+  "message": "Không tìm thấy user hợp lệ nào với email đã cung cấp"
+}
+```
+**Solution**: Kiểm tra email users có tồn tại và active trong hệ thống.
 
 ## Debug Tips:
 1. Check JWT token expiration

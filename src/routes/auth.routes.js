@@ -5,7 +5,8 @@ import {
   refreshToken, 
   logout, 
   getProfile, 
-  updateProfile 
+  updateProfile,
+  getUsers 
 } from '../controllers/auth.controller.js';
 import { authenticate } from '../middlewares/auth.js';
 import { asyncHandler } from '../helpers/asyncHandle.js';
@@ -21,5 +22,6 @@ router.post('/refresh-token', asyncHandler(refreshToken));
 router.post('/logout', authenticate, asyncHandler(logout));
 router.get('/profile', authenticate, asyncHandler(getProfile));
 router.put('/profile', authenticate, asyncHandler(updateProfile));
+router.get('/users', authenticate, asyncHandler(getUsers));
 
 export default router;

@@ -212,11 +212,61 @@ export async function updateProfile(req, res, next) {
   }
 }
 
+// Lấy danh sách users (chỉ admin)
+export async function getUsers(req, res, next) {
+  try {
+    // Kiểm tra quyền admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Chỉ admin mới có quyền xem danh sách users'
+      });
+    }
+
+    const page = Math.max(parseInt(req.query.page || '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || '20', 10), 1), 100);
+    const skip = (page - 1) * limit;
+    const search = req.query.search || '';
+
+    // Build query
+    const query = { isActive: true };
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      User.find(query)
+        .select('_id name email role')
+        .sort({ name: 1 })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(query)
+    ]);
+
+    res.json({
+      status: 'success',
+      data: {
+        users,
+        page,
+        limit,
+        total
+      }
+    });
+    
+  } catch (err) {
+    next(err);
+  }
+}
+
 export default { 
   register, 
   login, 
   refreshToken, 
   logout, 
   getProfile, 
-  updateProfile 
+  updateProfile,
+  getUsers 
 };

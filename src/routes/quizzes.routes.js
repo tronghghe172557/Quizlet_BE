@@ -5,7 +5,10 @@ import {
   getQuizById, 
   updateQuiz, 
   deleteQuiz, 
-  getMyQuizzes 
+  getMyQuizzes,
+  shareQuiz,
+  unshareQuiz,
+  getQuizSharedUsers 
 } from '../controllers/quizzes.controller.js';
 import { authenticate, optionalAuth, requireRole, requireOwnerOrAdmin } from '../middlewares/auth.js';
 import { validateResourceOwnership } from '../helpers/permissions.js';
@@ -28,6 +31,15 @@ router.put('/:id', authenticate, requireOwnerOrAdmin(), validateResourceOwnershi
 
 // Xóa quiz - chỉ owner hoặc admin  
 router.delete('/:id', authenticate, requireOwnerOrAdmin(), validateResourceOwnership(Quiz), asyncHandler(deleteQuiz));
+
+// Chia sẻ quiz - chỉ admin
+router.post('/:id/share', authenticate, validateResourceOwnership(Quiz), asyncHandler(shareQuiz));
+
+// Hủy chia sẻ quiz - chỉ admin
+router.delete('/:id/share', authenticate, validateResourceOwnership(Quiz), asyncHandler(unshareQuiz));
+
+// Lấy danh sách users được chia sẻ quiz - chỉ owner hoặc admin
+router.get('/:id/shared-users', authenticate, validateResourceOwnership(Quiz), asyncHandler(getQuizSharedUsers));
 
 // Lấy quiz của user hiện tại
 router.get('/my/quizzes', authenticate, asyncHandler(getMyQuizzes));

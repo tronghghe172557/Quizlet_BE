@@ -6,6 +6,12 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const apiKeys = [
   process.env.GEMINI_API_KEY_1,
   process.env.GEMINI_API_KEY_2,
+  process.env.GEMINI_API_KEY_3,
+  process.env.GEMINI_API_KEY_4,
+  process.env.GEMINI_API_KEY_5,
+  process.env.GEMINI_API_KEY_6,
+  process.env.GEMINI_API_KEY_7,
+  process.env.GEMINI_API_KEY_8,
 ].filter(Boolean); // Remove empty keys
 
 const skillLevel = process.env.SKILL || "A2-B1";
@@ -45,7 +51,7 @@ JSON
 {
   "questions": [
     {
-      "prompt": "Từ mới: [The English Word]\nĐịnh nghĩa (EN): [English definition from a reliable dictionary]\nTừ loại: [Part of speech, e.g., noun, verb, adj]\nNghĩa tiếng Việt: [Accurate Vietnamese meaning]\nMẹo ghi nhớ: [A fun, practical, or funny tip in 'Cô Trang' style]\nPhát âm (IPA): /[pronunciation]/",
+      "prompt": "Từ mới: [The English Word]\nĐịnh nghĩa (EN): [English definition from a reliable dictionary]\nTừ loại: [Part of speech, e.g., noun, verb, adj]\nNghĩa tiếng Việt: [Accurate Vietnamese meaning]\nMẹo ghi nhớ: [A fun, practical, or funny tip in 'Cô Trang' style]\nPhát âm (IPA): /[pronunciation]/\nTừ đồng nghĩa:[Synonyms if available]\nTừ trái nghĩa: [Antonyms if available]",
       "question": "[The English Word] trong tiếng Việt có nghĩa là gì?",
       "choices": [
         {"text": "Nghĩa tiếng Việt sai 1", "isCorrect": false},

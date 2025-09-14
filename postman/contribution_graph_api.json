@@ -1,0 +1,378 @@
+{
+  "info": {
+    "name": "Contribution Graph API",
+    "description": "API Collection for GitHub-style contribution graph and learning analytics",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "contribution-graph-api-v1",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "{{jwt_token}}",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🎯 Contribution Graph",
+      "item": [
+        {
+          "name": "Get Contribution Graph",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/submissions/contributions/graph?days=365&year=2025",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "submissions", "contributions", "graph"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "365",
+                  "description": "Số ngày lùi về từ endDate (default: 365)"
+                },
+                {
+                  "key": "year",
+                  "value": "2025",
+                  "description": "Năm cần lấy dữ liệu (default: current year)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-09-14",
+                  "description": "Ngày kết thúc (YYYY-MM-DD) - optional",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lấy dữ liệu contribution graph giống GitHub với:\n- Daily contribution count và intensity (0-4)\n- Thống kê tổng quan (total, active days, max day)\n- Dữ liệu đầy đủ cho render UI graph"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer jwt_token_here"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/contributions/graph?days=365",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "submissions", "contributions", "graph"],
+                  "query": [{"key": "days", "value": "365"}]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Lấy contribution graph thành công\",\n  \"data\": {\n    \"contributions\": [\n      {\n        \"date\": \"2025-09-14\",\n        \"count\": 3,\n        \"intensity\": 2,\n        \"averageScore\": 85.5,\n        \"bestScore\": 95,\n        \"totalTime\": 1800,\n        \"weekday\": 6,\n        \"week\": 36\n      },\n      {\n        \"date\": \"2025-09-13\",\n        \"count\": 0,\n        \"intensity\": 0,\n        \"averageScore\": 0,\n        \"bestScore\": 0,\n        \"totalTime\": 0,\n        \"weekday\": 5,\n        \"week\": 36\n      }\n    ],\n    \"stats\": {\n      \"totalContributions\": 127,\n      \"activeDays\": 89,\n      \"totalDays\": 365,\n      \"maxDayCount\": 8,\n      \"averagePerDay\": 1.4,\n      \"period\": {\n        \"startDate\": \"2024-09-15\",\n        \"endDate\": \"2025-09-14\",\n        \"days\": 365\n      }\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Contribution Graph - Last 7 Days",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/submissions/contributions/graph?days=7",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "submissions", "contributions", "graph"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "7",
+                  "description": "Lấy dữ liệu 7 ngày gần nhất"
+                }
+              ]
+            },
+            "description": "Example lấy dữ liệu contribution 7 ngày gần nhất"
+          }
+        },
+        {
+          "name": "Get Contribution Graph - Custom Date Range",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/submissions/contributions/graph?days=30&endDate=2025-09-14",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "submissions", "contributions", "graph"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30",
+                  "description": "30 ngày"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-09-14",
+                  "description": "Kết thúc tại ngày cụ thể"
+                }
+              ]
+            },
+            "description": "Example lấy 30 ngày từ một thời điểm cụ thể"
+          }
+        }
+      ],
+      "description": "APIs để lấy dữ liệu contribution graph giống GitHub"
+    },
+    {
+      "name": "🔥 Streak System",
+      "item": [
+        {
+          "name": "Get Contribution Streaks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/submissions/contributions/streaks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "submissions", "contributions", "streaks"]
+            },
+            "description": "Lấy thông tin streak (chuỗi ngày học liên tiếp) bao gồm:\n- Current streak: Chuỗi hiện tại\n- Longest streak: Kỷ lục cá nhân\n- Motivation messages\n- Activity status hôm nay"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer jwt_token_here"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/contributions/streaks",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "submissions", "contributions", "streaks"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Lấy streak information thành công\",\n  \"data\": {\n    \"currentStreak\": 5,\n    \"longestStreak\": 12,\n    \"totalActiveDays\": 89,\n    \"firstActivityDate\": \"2024-03-15\",\n    \"lastActivityDate\": \"2025-09-14\",\n    \"isActiveToday\": true,\n    \"streakInfo\": {\n      \"message\": \"Bạn đã học liên tục 5 ngày! 🔥\",\n      \"motivation\": \"Kỷ lục của bạn là 12 ngày. Hãy cố gắng phá vỡ nó!\"\n    }\n  }\n}"
+            }
+          ]
+        }
+      ],
+      "description": "APIs cho streak system và gamification"
+    },
+    {
+      "name": "📊 Learning Analytics",
+      "item": [
+        {
+          "name": "Get Contribution Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/submissions/contributions/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "submissions", "contributions", "summary"]
+            },
+            "description": "Lấy tổng quan thống kê contributions theo năm hiện tại bao gồm:\n- Overview: Thống kê tổng quan\n- Monthly breakdown: Phân tích theo tháng\n- Weekday pattern: Pattern học tập theo ngày trong tuần\n- Insights: Phân tích thông minh về habits"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer jwt_token_here"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/submissions/contributions/summary",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "submissions", "contributions", "summary"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Lấy contribution summary thành công\",\n  \"data\": {\n    \"year\": 2025,\n    \"overview\": {\n      \"totalSubmissions\": 127,\n      \"averageScore\": 82.3,\n      \"bestScore\": 100,\n      \"totalTime\": 45600,\n      \"totalTimeHours\": 12.7,\n      \"activeDays\": 89,\n      \"averagePerActiveDay\": 1.4,\n      \"completionRate\": 24\n    },\n    \"monthlyBreakdown\": [\n      {\n        \"month\": 9,\n        \"year\": 2025,\n        \"count\": 15,\n        \"averageScore\": 85.2\n      },\n      {\n        \"month\": 8,\n        \"year\": 2025,\n        \"count\": 22,\n        \"averageScore\": 78.5\n      }\n    ],\n    \"weekdayPattern\": [\n      {\n        \"dayOfWeek\": 2,\n        \"dayName\": \"Thứ 2\",\n        \"count\": 20,\n        \"averageScore\": 84.5\n      },\n      {\n        \"dayOfWeek\": 3,\n        \"dayName\": \"Thứ 3\",\n        \"count\": 18,\n        \"averageScore\": 81.2\n      }\n    ],\n    \"insights\": {\n      \"mostActiveMonth\": 8,\n      \"bestMonthScore\": 85.2,\n      \"mostActiveWeekday\": \"Thứ 2\"\n    }\n  }\n}"
+            }
+          ]
+        }
+      ],
+      "description": "APIs cho learning analytics và insights"
+    },
+    {
+      "name": "🔑 Test Authentication",
+      "item": [
+        {
+          "name": "Login to Get Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login để lấy JWT token cho testing"
+          },
+          "response": [
+            {
+              "name": "Login Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Đăng nhập thành công\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"_id\": \"user_id_here\",\n    \"email\": \"user@example.com\",\n    \"name\": \"User Name\"\n  }\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Authentication endpoints for testing"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set environment variables",
+          "if (!pm.environment.get('baseUrl')) {",
+          "    pm.environment.set('baseUrl', 'http://localhost:3001');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "pm.test('Status code is 200', function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test('Response has message field', function () {",
+          "    const jsonData = pm.response.json();",
+          "    pm.expect(jsonData).to.have.property('message');",
+          "});",
+          "",
+          "// Auto-extract token from login response",
+          "if (pm.info.requestName === 'Login to Get Token') {",
+          "    const jsonData = pm.response.json();",
+          "    if (jsonData.token) {",
+          "        pm.environment.set('authToken', jsonData.token);",
+          "        console.log('✅ Token saved to environment');",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}

@@ -93,47 +93,66 @@ DailyVocabularySchema.statics.createDailyVocabulary = async function(userId, wor
   
   console.log(`📚 Creating daily vocabulary for user ${userId}, wordCount: ${wordCount}`);
   
-  // SIMPLIFIED LOGIC: Lấy từ vựng từ quiz database
+  // ENHANCED LOGIC: Lấy từ vựng từ quiz database với ưu tiên model mới nhất
   const Quiz = mongoose.model('Quiz');
   let vocabularyFromQuizzes = [];
   
   try {
-    // Lấy quiz và extract từ vựng một cách đơn giản
-    const quizzes = await Quiz.find({}).limit(50);
-    console.log(`Found ${quizzes.length} quizzes in database`);
+    // Lấy tất cả quiz có vocabulary và shuffle random
+    const quizzes = await Quiz.find({
+      vocabulary: { $exists: true, $not: { $size: 0 } }
+    }).limit(100);
     
-    for (const quiz of quizzes) {
-      for (const question of quiz.questions) {
-        // Extract từ trong dấu nháy đơn từ prompt
-        const wordMatch = question.prompt.match(/'([^']+)'/);
-        if (wordMatch) {
-          const word = wordMatch[1];
-          
-          // Tìm đáp án đúng
-          const correctChoice = question.choices.find(choice => choice.isCorrect);
-          if (correctChoice) {
-            const meaning = correctChoice.text;
+    console.log(`Found ${quizzes.length} quizzes with vocabulary in database`);
+    
+    // Shuffle quizzes ngay từ đầu để random
+    const shuffledQuizzes = quizzes.sort(() => 0.5 - Math.random());
+    
+    for (const quiz of shuffledQuizzes) {
+      console.log(`Processing quiz: ${quiz.title} (Model: ${quiz.model}, Vocabulary: ${quiz.vocabulary?.length || 0} words)`);
+      
+      // SIMPLIFIED LOGIC: Lấy trực tiếp từ vocabulary array và shuffle
+      if (quiz.vocabulary && Array.isArray(quiz.vocabulary) && quiz.vocabulary.length > 0) {
+        // Shuffle vocabulary items ngay từ đầu
+        const shuffledVocab = quiz.vocabulary.sort(() => 0.5 - Math.random());
+        
+        for (const vocabItem of shuffledVocab) {
+          if (typeof vocabItem === 'string' && vocabItem.trim()) {
+            // Parse vocabulary item (có thể có format "1.notepad" hoặc chỉ "notepad")
+            let cleanWord = vocabItem.trim();
             
-            // Extract pronunciation từ explanation nếu có
-            const pronunciationMatch = question.explanation ? 
-              question.explanation.match(/\/[^\/]+\//) : null;
-            const pronunciation = pronunciationMatch ? pronunciationMatch[0] : '';
+            // Loại bỏ số thứ tự nếu có (ví dụ: "1.notepad" -> "notepad")
+            const numberPrefixMatch = cleanWord.match(/^\d+\.\s*(.+)$/);
+            if (numberPrefixMatch) {
+              cleanWord = numberPrefixMatch[1].trim();
+            }
             
-            vocabularyFromQuizzes.push({
-              word: word,
-              meaning: meaning,
-              pronunciation: pronunciation,
-              example: `Example: ${word} - ${meaning}`,
-              category: 'vocabulary',
-              difficulty: 'intermediate'
-            });
-            
-            // Đủ từ rồi thì break
-            if (vocabularyFromQuizzes.length >= wordCount) break;
+            // Validate từ vựng
+            if (this.isValidWord(cleanWord)) {
+              // Tránh duplicate
+              if (!vocabularyFromQuizzes.find(v => v.word.toLowerCase() === cleanWord.toLowerCase())) {
+                vocabularyFromQuizzes.push({
+                  word: cleanWord,
+                  meaning: `Nghĩa của ${cleanWord}`, // Placeholder meaning
+                  pronunciation: '',
+                  example: `Example with ${cleanWord}`,
+                  category: quiz.questionType || 'vocabulary',
+                  difficulty: this.mapEnglishLevelToDifficulty(quiz.englishLevel),
+                  sourceQuiz: quiz.title,
+                  sourceModel: quiz.model
+                });
+                
+                console.log(`✅ Added word from vocabulary: ${cleanWord} (${quiz.model})`);
+              }
+            }
           }
+          
+          // Đủ từ rồi thì break
+          if (vocabularyFromQuizzes.length >= wordCount * 2) break;
         }
       }
-      if (vocabularyFromQuizzes.length >= wordCount) break;
+      
+      if (vocabularyFromQuizzes.length >= wordCount * 2) break;
     }
     
     console.log(`Extracted ${vocabularyFromQuizzes.length} words from quizzes`);
@@ -241,38 +260,51 @@ DailyVocabularySchema.statics.createDailyVocabulary = async function(userId, wor
     }
   ];
   
-  // Combine từ quiz và từ mặc định
+  // RANDOM COMBINATION LOGIC: Lấy random từ tất cả sources
   const finalVocabulary = [];
   
-  // Thêm từ từ quiz trước (ưu tiên)
-  for (const word of vocabularyFromQuizzes) {
-    if (finalVocabulary.length < wordCount) {
-      finalVocabulary.push(word);
+  // Shuffle tất cả từ vựng từ quiz + default words
+  const allWords = [...vocabularyFromQuizzes, ...defaultWords];
+  const shuffledAllWords = allWords.sort(() => 0.5 - Math.random());
+  
+  console.log(`📊 Word sources summary:`);
+  console.log(`- From quizzes: ${vocabularyFromQuizzes.length} words`);
+  console.log(`- Default words: ${defaultWords.length} words`);
+  console.log(`- Total available: ${allWords.length} words`);
+  
+  // Lấy random words tránh duplicate
+  for (const word of shuffledAllWords) {
+    if (finalVocabulary.length >= wordCount) break;
+    
+    // Tránh duplicate
+    const isDuplicate = finalVocabulary.find(w => 
+      w.word.toLowerCase() === word.word.toLowerCase()
+    );
+    
+    if (!isDuplicate) {
+      finalVocabulary.push({
+        word: word.word,
+        meaning: word.meaning,
+        pronunciation: word.pronunciation || '',
+        example: word.example || `Example: ${word.word} means ${word.meaning}`,
+        category: word.category || 'vocabulary',
+        difficulty: word.difficulty || 'intermediate'
+      });
     }
   }
   
-  // Thêm từ mặc định nếu thiếu
-  for (const defaultWord of defaultWords) {
-    if (finalVocabulary.length < wordCount) {
-      // Tránh duplicate
-      if (!finalVocabulary.find(w => w.word.toLowerCase() === defaultWord.word.toLowerCase())) {
-        finalVocabulary.push(defaultWord);
-      }
-    }
-  }
-  
-  // Shuffle array for randomness
-  const shuffledVocabulary = finalVocabulary.sort(() => 0.5 - Math.random());
+  // Final shuffle để đảm bảo random hoàn toàn
+  const finalShuffledVocabulary = finalVocabulary.sort(() => 0.5 - Math.random());
   
   console.log(`📚 Final vocabulary summary:`);
-  console.log(`- From quizzes: ${vocabularyFromQuizzes.length}`);
-  console.log(`- Total words: ${shuffledVocabulary.length}`);
-  console.log(`- Words: ${shuffledVocabulary.map(w => w.word).join(', ')}`);
+  console.log(`- Total selected: ${finalShuffledVocabulary.length}/${wordCount}`);
+  console.log(`- Random selection from all sources`);
+  console.log(`- Words: ${finalShuffledVocabulary.map(w => w.word).join(', ')}`);
   
   return this.create({
     user: userId,
     date: today,
-    vocabularyWords: shuffledVocabulary.slice(0, wordCount),
+    vocabularyWords: finalShuffledVocabulary.slice(0, wordCount),
     totalWords: wordCount
   });
 };
@@ -319,6 +351,57 @@ DailyVocabularySchema.statics.updateUserStreak = async function(userId) {
   }
   
   return newStreak;
+};
+
+// Helper methods cho createDailyVocabulary
+DailyVocabularySchema.statics.mapEnglishLevelToDifficulty = function(englishLevel) {
+  const mapping = {
+    'A1': 'beginner',
+    'A2': 'beginner', 
+    'B1': 'intermediate',
+    'B2': 'intermediate',
+    'C1': 'advanced',
+    'C2': 'advanced'
+  };
+  return mapping[englishLevel] || 'intermediate';
+};
+
+DailyVocabularySchema.statics.isValidWord = function(word) {
+  // Kiểm tra từ có hợp lệ không
+  if (!word || typeof word !== 'string') return false;
+  word = word.trim();
+  if (word.length < 2 || word.length > 50) return false; // Tăng độ dài để chấp nhận phrase
+  return true; // Chấp nhận tất cả các từ vựng
+};
+
+DailyVocabularySchema.statics.isValidMeaning = function(meaning) {
+  // Kiểm tra nghĩa có hợp lệ không
+  if (!meaning || typeof meaning !== 'string') return false;
+  meaning = meaning.trim();
+  if (meaning.length < 1 || meaning.length > 100) return false;
+  // Loại bỏ những nghĩa không hợp lệ
+  const invalidPhrases = ['text', 'string', 'boolean', 'undefined', 'null'];
+  return !invalidPhrases.some(phrase => meaning.toLowerCase().includes(phrase));
+};
+
+DailyVocabularySchema.statics.generateExample = function(word, meaning, explanation) {
+  // Tạo example từ explanation hoặc tạo mới
+  if (explanation && explanation.length > 10) {
+    // Extract câu ví dụ từ explanation
+    const exampleMatch = explanation.match(/[A-Z][^.!?]*\b${word}\b[^.!?]*[.!?]/i);
+    if (exampleMatch) {
+      return exampleMatch[0];
+    }
+    
+    // Nếu explanation có hội thoại
+    const dialogMatch = explanation.match(/[A-B]:\s*"[^"]*"/);
+    if (dialogMatch) {
+      return dialogMatch[0];
+    }
+  }
+  
+  // Tạo example đơn giản
+  return `This ${word} means "${meaning}" in Vietnamese.`;
 };
 
 export default mongoose.model('DailyVocabulary', DailyVocabularySchema);
